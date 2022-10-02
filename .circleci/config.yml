@@ -1,0 +1,25 @@
+version: 2.1
+
+jobs:
+  build:
+    docker:
+      - image: cimg/node:16.17.1
+    steps:
+      - checkout
+      - run:
+          name: Install Node.js dependencies
+          command: |
+            npm install
+      - run:
+          name: Build the App
+          command: |
+            npm run build
+      - run:
+          name: Verify build folder exists
+          command: |
+            ls -al build/
+
+workflows:
+  default:
+    jobs:
+      - build
