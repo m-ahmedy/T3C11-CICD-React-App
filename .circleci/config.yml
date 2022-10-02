@@ -6,10 +6,18 @@ jobs:
       - image: cimg/node:16.17.1
     steps:
       - checkout
+      - restore_cache:
+          keys:
+            - v1-npm-deps-{{ checksum "package-lock.json" }}
+            - v1-npm-deps-
       - run:
           name: Install Node.js dependencies
           command: |
             npm install
+      - save_cache:
+          paths:
+            - node_modules
+          key: v1-npm-deps-{{ checksum "package-lock.json" }}
       - run:
           name: Build the App
           command: |
@@ -19,7 +27,49 @@ jobs:
           command: |
             ls -al build/
 
+  test:
+    docker:
+      - image: cimg/node:16.17.1
+    steps:
+      - checkout
+      - restore_cache:
+          keys:
+            - v1-npm-deps-{{ checksum "package-lock.json" }}
+            - v1-npm-deps-
+      - run:
+          name: Install Node.js dependencies
+          command: |
+            npm install
+      - run:
+          name: Run Unit Tests
+          command: |
+            npm test -- --watchAll=false
+
+  analyze:
+    docker:
+      - image: cimg/node:16.17.1
+    steps:
+      - checkout
+      - restore_cache:
+          keys:
+            - v1-npm-deps-{{ checksum "package-lock.json" }}
+            - v1-npm-deps-
+      - run:
+          name: Install Node.js dependencies
+          command: |
+            npm install
+      - run:
+          name: Analyze source code for critical vulnerabilities
+          command: |
+            npm audit --audit-level=critical
+
 workflows:
   default:
     jobs:
       - build
+      - test:
+          requires:
+            - build
+      - analyze:
+          requires:
+            - build
